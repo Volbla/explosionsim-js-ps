@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title>Explosion</title>
+	<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+	<script defer src="https://pyscript.net/latest/pyscript.js" id="psc"></script>
+
+	<py-config>packages = ["numpy"]</py-config>
+	<py-script src="blockarray.py"></py-script>
+	<script src="main.js" type="module"></script>
+
+	<style>
+		.man {
+			display: block;
+			margin: auto;
+		}
+	</style>
+</head>
+
+<body>
+	<div hidden id="start">Dummy element for detecting pyscript initialization.</div>
+	<canvas class="man" id="glcanvas" width="800" height="600"></canvas>
+	<p hidden id="text">Try scrolling</p>
+</body>
+
+</html>
