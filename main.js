@@ -1,4 +1,15 @@
 import {makeProgram, defineRenderParameters, makeVertexBuffer, makeIndexBuffer} from './gl_bp.js';
+import {code} from "./python.js"
+
+
+async function initPyod() {
+	let pyodide = await loadPyodide();
+	await pyodide.loadPackage("numpy");
+
+	return pyodide.runPython(code);
+}
+let pyod = initPyod();
+
 
 function main() {
 	const canvas = document.querySelector("#glcanvas");
@@ -25,8 +36,6 @@ function main() {
 
 
 function renderer(gl, canvas, uniformLocations, offsetLocation) {
-	const pyOrigins = pyscript.runtime.globals.get('origins');
-
 	var explosionRadius = 5;
 	var offsetArray = pyOrigins(explosionRadius);
 	var instanceCount = offsetArray.length / 3;
@@ -105,5 +114,6 @@ function setShaders(gl, glLocations, time){
 }
 
 
-// This makes sure pyscript has completely initialized before executing any js.
-document.getElementById("start").onclick = main;
+const pyOrigins = await pyod;
+main();
+document.getElementById("text").hidden = false;

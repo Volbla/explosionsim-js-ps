@@ -1,3 +1,4 @@
+export const code = `
 from pyodide.ffi import to_js
 import numpy as np
 from itertools import product
@@ -30,8 +31,6 @@ def origins(radius:float):
 	return to_js(hole.flatten())
 
 
-# This makes sure pyscript has completely initialized
-# before any local js starts executing.
-from pyscript import Element
-Element("start").element.click()
-Element("text").element.hidden = False
+# The last expression is returned when pyodide runs the code.
+origins
+`
