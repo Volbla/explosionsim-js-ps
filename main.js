@@ -19,48 +19,116 @@ function main() {
 		return;
 	}
 
+	defineRenderParameters(gl);
 	const program = makeProgram(gl);
-	const uniformLocations = {
+
+	const glLocations = {
 		scale: gl.getUniformLocation(program, 'Scale'),
 		camera: gl.getUniformLocation(program, 'Camera'),
 		rotation: gl.getUniformLocation(program, 'Rotation'),
+		offset: gl.getAttribLocation(program, 'offset')
 	};
-	const offsetLocation = gl.getAttribLocation(program, 'offset');
-
 	initCube(gl, gl.getAttribLocation(program, 'position'));
 
-	defineRenderParameters(gl);
-
-	renderer(gl, canvas, uniformLocations, offsetLocation);
+	renderer(gl, canvas, glLocations);
 }
 
 
-function renderer(gl, canvas, uniformLocations, offsetLocation) {
-	var explosionRadius = 5;
-	var offsetArray = pyOrigins(explosionRadius);
-	var instanceCount = offsetArray.length / 3;
-	const offsetBuffer = makeVertexBuffer(gl, offsetArray, offsetLocation, gl.DYNAMIC_DRAW, 1);
+function renderer(gl, canvas, glLocations) {
+	gl.uniform2fv(glLocations.scale, [1 * 3/4, 1]);
 
-	function render(now) {
-		setShaders(gl, uniformLocations, now * 0.001);
+	let explosionRadius = 5;
+	let offsetArray = pyOrigins(explosionRadius);
+	let instanceCount = offsetArray.length / 3;
+	const offsetBuffer = makeVertexBuffer(gl, offsetArray, glLocations.offset, gl.DYNAMIC_DRAW, 1);
+
+	function render() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 14, gl.UNSIGNED_SHORT, 0, instanceCount);
-
-		requestAnimationFrame(render);
 	}
+
+
+	// Webgl uniforms
+	let distance = 6;
+	let yaw = 0, pitch = 0;
+	let direction;
+
+	function setCamera() {
+		const cam = Array.from({ length: 3 }, (_, i) =>
+			distance * direction[i]
+		);
+		gl.uniform3fv(glLocations.camera, cam);
+	}
+
+	function setRotation(){
+		const cy = Math.cos(yaw),
+			sy = Math.sin(yaw),
+			cp = Math.cos(pitch),
+			sp = Math.sin(pitch);
+
+		direction = [
+			cy * cp,
+			sy * cp,
+			sp
+		];
+		const rotationMatrix = [
+			-sy, cy, 0,
+			-cy*cp, -sy*cp, -sp,
+			-cy*sp, -sy*sp, cp
+		];
+
+		gl.uniformMatrix3fv(glLocations.rotation, true, rotationMatrix);
+		setCamera()
+	}
+
+	setRotation();
 	requestAnimationFrame(render);
 
 
+	// Events for controls
+	let mousePos = null;
+
+	canvas.addEventListener('mousedown', evt => {
+	if (evt.button === 0) {
+		evt.preventDefault();
+		mousePos = [evt.clientX, evt.clientY];
+	}});
+
+	window.addEventListener('mousemove', evt => {
+	if (mousePos) {
+		yaw -= (evt.clientX - mousePos[0]) / 100;
+		pitch += (evt.clientY - mousePos[1]) / 100;
+		yaw = clampAngle(yaw);
+		pitch = clampAngle(pitch);
+
+		mousePos = [evt.clientX, evt.clientY];
+		setRotation()
+		requestAnimationFrame(render);
+	}});
+
+	window.addEventListener('mouseup', evt => {
+	if (evt.button === 0) {
+		evt.preventDefault();
+		mousePos = null;
+	}});
+
 	canvas.addEventListener("wheel", (wheel) => {
-		let d = Math.sign(wheel.deltaY);
-		explosionRadius *= 1.05 ** -d;
-		offsetArray = pyOrigins(explosionRadius);
-		instanceCount = offsetArray.length / 3;
+		wheel.preventDefault();
+		distance += Math.sign(wheel.deltaY);
+		distance = Math.max(0, distance);
+		setCamera();
+		requestAnimationFrame(render);
+	});
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, offsetBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, offsetArray, gl.DYNAMIC_DRAW);
-	})
+	// canvas.addEventListener("wheel", (wheel) => {
+	// 	let d = Math.sign(wheel.deltaY);
+	// 	explosionRadius *= 1.05 ** -d;
+	// 	offsetArray = pyOrigins(explosionRadius);
+	// 	instanceCount = offsetArray.length / 3;
 
+	// 	gl.bindBuffer(gl.ARRAY_BUFFER, offsetBuffer);
+	// 	gl.bufferData(gl.ARRAY_BUFFER, offsetArray, gl.DYNAMIC_DRAW);
+	// });
 }
 
 
@@ -85,32 +153,9 @@ function initCube(gl, glLocation) {
 }
 
 
-// This will get split up into different functions once i add some actual controls.
-function setShaders(gl, glLocations, time){
-	const d = 1;
-	const r = 3 / 4;
-	const zoom = [d * r, d];
-	gl.uniform2fv(glLocations.scale, zoom);
-
-
-	const target = [0, 0, 0];
-	const distance = [8 * Math.cos(time / 5), 8 * Math.sin(time / 5), 3];
-	const camera = Array.from({ length: 3 }, (_, i) => target[i] + distance[i]);
-	gl.uniform3fv(glLocations.camera, camera);
-
-
-	const lookNorm = Math.sqrt(
-		distance[0] ** 2 + distance[1] ** 2 + distance[2] ** 2
-	);
-	const a = -distance[0] / lookNorm;
-	const b = -distance[1] / lookNorm;
-	const c = -distance[2] / lookNorm;
-	const rotation = [
-		b, -a, 0,
-		a, b, c,
-		-c * a, -c * b, 1
-	];
-	gl.uniformMatrix3fv(glLocations.rotation, true, rotation);
+function clampAngle(angle) {
+	const ninty = Math.PI / 2.1;
+	return Math.max(-ninty, Math.min(ninty, angle))
 }
 
 

@@ -12,7 +12,7 @@ attribute vec3 offset;
 varying vec3 vColor;
 
 void main() {
-  vColor = vec3( (position.xyz + 1.)/2. );
+  vColor = vec3( position.xyz / 2.3 + 0.4 );
 
   vec3 p = Rotation * (position + offset - Camera);
   p.xz *= Scale;
