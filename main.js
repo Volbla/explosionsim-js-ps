@@ -1,14 +1,5 @@
 import {makeProgram, defineRenderParameters, makeVertexBuffer, makeIndexBuffer} from './gl_bp.js';
-import {code} from "./python.js"
-
-
-async function initPyod() {
-	let pyodide = await loadPyodide();
-	await pyodide.loadPackage("numpy");
-
-	return pyodide.runPython(code);
-}
-let pyod = initPyod();
+import {touchesSphere} from "./arraylib.js"
 
 
 function main() {
@@ -38,7 +29,8 @@ function renderer(gl, canvas, glLocations) {
 	gl.uniform2fv(glLocations.scale, [1 * 3/4, 1]);
 
 	let explosionRadius = 5;
-	let offsetArray = pyOrigins(explosionRadius);
+	// The origins of any cubes to be rendered.
+	let offsetArray = touchesSphere(explosionRadius);
 	let instanceCount = offsetArray.length / 3;
 	const offsetBuffer = makeVertexBuffer(gl, offsetArray, glLocations.offset, gl.DYNAMIC_DRAW, 1);
 
@@ -96,8 +88,8 @@ function renderer(gl, canvas, glLocations) {
 
 	window.addEventListener('mousemove', evt => {
 	if (mousePos) {
-		yaw -= (evt.clientX - mousePos[0]) / 100;
-		pitch += (evt.clientY - mousePos[1]) / 100;
+		yaw -= (evt.clientX - mousePos[0]) / 140;
+		pitch += (evt.clientY - mousePos[1]) / 140;
 		yaw = clampAngle(yaw);
 		pitch = clampAngle(pitch);
 
@@ -159,6 +151,5 @@ function clampAngle(angle) {
 }
 
 
-const pyOrigins = await pyod;
 main();
 document.getElementById("text").hidden = false;
