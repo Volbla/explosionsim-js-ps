@@ -1,9 +1,9 @@
-import {makeProgram, defineRenderParameters, makeVertexBuffer, makeIndexBuffer} from './gl_bp.js';
+import {makeProgram, defineRenderParameters, makeVertexBuffer, makeIndexBuffer} from './webgl_boilerplate.js';
 import {touchesSphere} from "./arraylib.js"
 
 
 function main() {
-	const canvas = document.querySelector("#glcanvas");
+	const canvas = document.getElementsByTagName("canvas")[0];
 	const gl = canvas.getContext("webgl2");
 	if (gl === null) {
 		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
@@ -104,9 +104,9 @@ function renderer(gl, canvas, glLocations) {
 		mousePos = null;
 	}});
 
-	canvas.addEventListener("wheel", (wheel) => {
-		wheel.preventDefault();
-		distance += Math.sign(wheel.deltaY);
+	canvas.addEventListener("wheel", evt => {
+		evt.preventDefault();
+		distance += Math.sign(evt.deltaY);
 		distance = Math.max(0, distance);
 		setCamera();
 		requestAnimationFrame(render);
