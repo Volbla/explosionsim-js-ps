@@ -1,10 +1,10 @@
 import {makeProgram, defineRenderParameters, makeVertexBuffer, makeIndexBuffer} from './webgl_boilerplate.js';
-import {touchesSphere} from "./arraylib.js"
+import {touchesSphere, explosionHole} from "./arraylib.js"
 
+const canvas = document.getElementsByTagName("canvas")[0];
+const gl = canvas.getContext("webgl2");
 
 function main() {
-	const canvas = document.getElementsByTagName("canvas")[0];
-	const gl = canvas.getContext("webgl2");
 	if (gl === null) {
 		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
 		return;
@@ -21,18 +21,19 @@ function main() {
 	};
 	initCube(gl, gl.getAttribLocation(program, 'position'));
 
-	renderer(gl, canvas, glLocations);
+	renderer(canvas, glLocations);
 }
 
 
-function renderer(gl, canvas, glLocations) {
+function renderer(canvas, glLocations) {
 	gl.uniform2fv(glLocations.scale, [1 * 3/4, 1]);
 
-	let explosionRadius = 5;
+	let explosionPower = 4;
 	// The origins of any cubes to be rendered.
-	let offsetArray = touchesSphere(explosionRadius);
+	let offsetArray = explosionHole(explosionPower, 6, [[0,0,0]]);
 	let instanceCount = offsetArray.length / 3;
 	const offsetBuffer = makeVertexBuffer(gl, offsetArray, glLocations.offset, gl.DYNAMIC_DRAW, 1);
+
 
 	function render() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -42,7 +43,7 @@ function renderer(gl, canvas, glLocations) {
 
 	// Webgl uniforms
 	let distance = 6;
-	let yaw = 0, pitch = 0;
+	let yaw = 3, pitch = 0;
 	let direction;
 
 	function setCamera() {
@@ -90,8 +91,8 @@ function renderer(gl, canvas, glLocations) {
 	if (mousePos) {
 		yaw -= (evt.clientX - mousePos[0]) / 140;
 		pitch += (evt.clientY - mousePos[1]) / 140;
-		yaw = clampAngle(yaw);
-		pitch = clampAngle(pitch);
+		yaw = clampAngle(yaw, "yaw");
+		pitch = clampAngle(pitch, "pitch");
 
 		mousePos = [evt.clientX, evt.clientY];
 		setRotation()
@@ -145,11 +146,16 @@ function initCube(gl, glLocation) {
 }
 
 
-function clampAngle(angle) {
-	const ninty = Math.PI / 2.1;
-	return Math.max(-ninty, Math.min(ninty, angle))
+function clampAngle(angle, type) {
+	const ninty = Math.PI / 2.2;
+
+	if (type == "yaw")
+	return Math.max(Math.PI-ninty, Math.min(Math.PI+ninty, angle));
+
+	if (type == "pitch")
+	return Math.max(-ninty, Math.min(ninty, angle));
 }
 
 
 main();
-document.getElementById("text").hidden = false;
+// document.getElementById("text").hidden = false;
